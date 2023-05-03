@@ -5,3 +5,101 @@ date: "2023-05-01"
 output: pdf_document
 ---
 
+```{r, include = FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(caret)
+library(e1071)
+library(ISLR) 
+library(factoextra)
+
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+## Question 1:
+
+In this problem, we will apply support vector machines to predict whether a given car gets high or low gas mileage based on the dataset “auto.csv”. The response variable is mpg cat. The predictors are cylinders, displacement, horsepower, weight, acceleration, year, and origin.
+
+```{r setup}
+# Data import and preparation
+auto = read.csv("data/auto.csv") %>% 
+  mutate(
+    mpg_cat = as.factor(mpg_cat),
+    mpg_cat = fct_relevel(mpg_cat, c("low", "high")),
+    year = factor(year),
+    origin = as.factor(origin)) 
+
+set.seed(1)
+# Data partition
+trainRows <- createDataPartition(y = auto$mpg_cat, p = 0.7,list = FALSE)
+auto_train = auto[trainRows, ]
+auto_test = auto[-trainRows, ]
+```
+
+Note: Here I mutated `year` as a factor variable, since I don't assume there's a linear relationship between model year and gas millage. 
+
+
+### (a) Fit a support vector classifier (linear kernel) to the training data. 
+
+```{r}
+set.seed(1)
+# Fit model
+linear.tune <- tune.svm(mpg_cat ~ . ,
+                        data = auto_train,
+                        kernel = "linear",
+                        cost = exp(seq(-5,2,len = 50)), 
+                        scale = TRUE) 
+plot(linear.tune)
+
+# Optimal tuning parameters
+linear.tune$best.parameters
+
+# Extract final model and summarize
+best.linear <- linear.tune$best.model
+summary(best.linear)
+
+# Report training error rate
+confusionMatrix(data = best.linear$fitted,
+                reference = auto_train$mpg_cat)
+
+# Report test error rate 
+pred.linear <- predict(best.linear, newdata = auto_test)
+confusionMatrix(data = pred.linear,
+                reference = auto_test$mpg_cat)
+```
+
+- According to the confusion Matrix above, for the training data, the accuracy of the fitted support vector classifier is 0.9384, so the training error rate is (1-0.9384)*100% = 6.16% .
+
+- According to the confusion Matrix above, the accuracy when applied the model to the test data is 0.9052, so the test error rate is (1-0.9052)*100% = 9.48% .
+
+
+
+### b) Fit a support vector machine with a radial kernel to the training data.
+```{r}
+set.seed(1)
+# Fit model
+radial.tune <- tune.svm(mpg_cat ~ .,
+                        data = auto_train,
+                        kernel = "radial",
+                        cost = exp(seq(-1,4,len = 20)),
+                        gamma = exp(seq(-6,-2,len = 20)))
+plot(radial.tune, transform.y = log, transform.x = log,
+     color.palette = terrain.colors)
+
+# Optimal tuning parameters
+radial.tune$best.parameters
+
+# Extract final model and summarize
+best.radial <- radial.tune$best.model
+summary(best.radial)
+
+# Report training error rate
+confusionMatrix(data = best.radial$fitted,
+                reference = auto_train$mpg_cat)
+
+# Report test error rate
+pred.radial <- predict(best.radial, newdata = auto_test)
+confusionMatrix(data = pred.radial,
+                reference = auto_test$mpg_cat)
+```
+
+- The training error rate for the support vector machine is (1-0.9783)*100% = 2.17%. The test error rate is (1-0.9138)*100% = 8.62% .
