@@ -15,7 +15,7 @@ library(factoextra)
 knitr::opts_chunk$set(warning = FALSE)
 ```
 
-## Question 1:
+## Question 1
 
 In this problem, we will apply support vector machines to predict whether a given car gets high or low gas mileage based on the dataset “auto.csv”. The response variable is mpg cat. The predictors are cylinders, displacement, horsepower, weight, acceleration, year, and origin.
 
@@ -27,7 +27,11 @@ auto = read.csv("data/auto.csv") %>%
     mpg_cat = fct_relevel(mpg_cat, c("low", "high")),
     year = factor(year),
     origin = as.factor(origin)) 
+```
 
+Split the dataset into two parts - training data (70%) and test data (30%).
+
+```{r}
 set.seed(1)
 # Data partition
 trainRows <- createDataPartition(y = auto$mpg_cat, p = 0.7,list = FALSE)
@@ -35,7 +39,7 @@ auto_train = auto[trainRows, ]
 auto_test = auto[-trainRows, ]
 ```
 
-Note: Here I mutated `year` as a factor variable, since I don't assume there's a linear relationship between model year and gas millage. 
+Here I mutated `year` as a factor variable, since I don't assume there's a linear relationship between model year and gas millage. 
 
 
 ### (a) Fit a support vector classifier (linear kernel) to the training data. 
@@ -67,13 +71,16 @@ confusionMatrix(data = pred.linear,
                 reference = auto_test$mpg_cat)
 ```
 
-- According to the confusion Matrix above, for the training data, the accuracy of the fitted support vector classifier is 0.9384, so the training error rate is (1-0.9384)*100% = 6.16% .
+- With cross-validation, we find the optimal tuning parameter is when cost is 1.535063, which minimizes the error.
 
-- According to the confusion Matrix above, the accuracy when applied the model to the test data is 0.9052, so the test error rate is (1-0.9052)*100% = 9.48% .
+- According to the confusion Matrix above, for the training data, the accuracy of the fitted support vector classifier is 0.9384, so the training error rate is (1-0.9384)x100% = 6.16% .
+
+- According to the confusion Matrix above, the accuracy when applied the model to the test data is 0.9052, so the test error rate is (1-0.9052)x100% = 9.48% .
 
 
 
 ### b) Fit a support vector machine with a radial kernel to the training data.
+
 ```{r}
 set.seed(1)
 # Fit model
@@ -102,4 +109,80 @@ confusionMatrix(data = pred.radial,
                 reference = auto_test$mpg_cat)
 ```
 
-- The training error rate for the support vector machine is (1-0.9783)*100% = 2.17%. The test error rate is (1-0.9138)*100% = 8.62% .
+- The training error rate for the support vector machine is (1-0.9783)x100% = 2.17%. The test error rate is (1-0.9138)x100% = 8.62%.
+
+
+
+## Question 2
+
+We perform hierarchical clustering on the states using the USArrests data in the ISLR package.
+
+```{r, results='hide'}
+# import data
+data(USArrests)
+arrests_df = USArrests %>%
+  as.data.frame()
+```
+
+### a) Using hierarchical clustering with complete linkage and Euclidean distance, cluster the states. Cut the dendrogram at a height that results in three distinct clusters.
+
+```{r}
+# compute the 3 clusters of states
+hc.complete <- hclust(dist(arrests_df), method = "complete")
+
+# visualize
+fviz_dend(hc.complete, k = 3,
+          cex = 0.3,
+          palette = "jco",
+          color_labels_by_k = TRUE,
+          rect = TRUE, rect_fill = TRUE, rect_border = "jco",
+          labels_track_height = 2.5)
+
+ind3.complete <- cutree(hc.complete, 3)
+
+# The states in different clusters
+clus1 <- rownames(arrests_df[ind3.complete == 1,]); clus1
+clus2 <- rownames(arrests_df[ind3.complete == 2,]); clus2
+clus3 <- rownames(arrests_df[ind3.complete == 3,]); clus3
+
+```
+
+- The states in cluster 1 include Alabama, Alaska, Arizona, California, Delaware, Florida, Illinois, Louisiana, Maryland, Michigan, Mississippi, Nevada, New Mexico, New York, North Carolina, and South Carolina.
+
+- The states in cluster 2 include Arkansas, Colorado, Georgia, Massachusetts, Missouri, New Jersey, Oklahoma, Oregon, Rhode Island, Tennessee, Texas, Virginia, Washington, and Wyoming.
+
+- The states in cluster 3 include Connecticut, Hawaii, Idaho, Indiana, Iowa, Kansas, Kentucky, Maine, Minnesota, Montana, Nebraska, New Hampshire, North Dakota, Ohio, Pennsylvania, South Dakota, Utah, Vermont, West Virginia and Wisconsin.
+
+
+### b) Hierarchically cluster the states using complete linkage and Euclidean distance, after scaling the variables to have standard deviation one.
+
+```{r}
+arrests_df_scaled = scale(arrests_df)
+
+hc.complete.scaled <- hclust(dist(arrests_df_scaled), method = "complete")
+fviz_dend(hc.complete.scaled, k = 3,
+          cex = 0.3,
+          palette = "jco",
+          color_labels_by_k = TRUE,
+          rect = TRUE, rect_fill = TRUE, rect_border = "jco",
+          labels_track_height = 2.5)
+
+ind3.complete.scaled <- cutree(hc.complete.scaled, 3)
+
+# The states in different clusters for standardized data
+scaled.clus1 <- rownames(arrests_df[ind3.complete.scaled == 1,]); scaled.clus1
+scaled.clus2 <- rownames(arrests_df[ind3.complete.scaled == 2,]); scaled.clus2
+scaled.clus3 <- rownames(arrests_df[ind3.complete.scaled == 3,]); scaled.clus3
+```
+
+- The states in cluster 1 include Alabama, Alaska, Georgia, Louisiana, Mississippi, North Carolina, South Carolina, and Tennessee.
+
+- The states in cluster 2 include Arizona, California, Colorado, Florida, Illinois, Maryland, Michigan, Nevada, New Mexico, New York, and Texas.
+
+- The states in cluster 3 include Arkansas, Connecticut, Delaware, Hawaii, Idaho, Indiana, Iowa, Kansas, Kentucky, Maine, Massachusetts, Minnesota, Missouri, Montana, Nebraska, New Hampshire, New Jersey, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, Rhode Island, South Dakota, Utah, Vermont, Virginia, Washington, West Virginia, Wisconsin, and Wyoming.
+
+ 
+
+
+
+
