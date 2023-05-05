@@ -71,7 +71,7 @@ confusionMatrix(data = pred.linear,
                 reference = auto_test$mpg_cat)
 ```
 
-- With cross-validation, we find the optimal tuning parameter is when cost is 1.535063, which minimizes the error.
+- With cross-validation, we find the optimal tuning parameter is when cost is 1.535063, which minimizes the error. There are 62 support vectors in the optimal support vector classifier with a linear kernel.
 
 - According to the confusion Matrix above, for the training data, the accuracy of the fitted support vector classifier is 0.9384, so the training error rate is (1-0.9384)x100% = 6.16% .
 
@@ -109,19 +109,22 @@ confusionMatrix(data = pred.radial,
                 reference = auto_test$mpg_cat)
 ```
 
-- The training error rate for the support vector machine is (1-0.9783)x100% = 2.17%. The test error rate is (1-0.9138)x100% = 8.62%.
+- From the summary, we found the optimal tuning parameters, gamma and cost, of the support vector machine are 0.1353353 and 6.650798. There are 72 support vectors in the optimal support vector classifier with a linear kernel. 
+
+- We use the best model to determine our training and testing error rates. The training error rate for the support vector machine is (1-0.9783)x100% = 2.17%. The test error rate is (1-0.9138)x100% = 8.62%.
 
 
 
 ## Question 2
 
-We perform hierarchical clustering on the states using the USArrests data in the ISLR package.
+We perform hierarchical clustering on the states using the USArrests data in the ISLR package. For each of the 50 states in the United States, the dataset contains the number of arrests per 100,000 residents for each of three crimes: Assault, Murder, and Rape. The dataset also contains the percent of the population in each state living in urban areas, UrbanPop. The four variables will be used as features for clustering.
 
 ```{r, results='hide'}
 # import data
 data(USArrests)
 arrests_df = USArrests %>%
-  as.data.frame()
+  as.data.frame() %>%
+  janitor::clean_names()
 ```
 
 ### a) Using hierarchical clustering with complete linkage and Euclidean distance, cluster the states. Cut the dendrogram at a height that results in three distinct clusters.
@@ -181,6 +184,20 @@ scaled.clus3 <- rownames(arrests_df[ind3.complete.scaled == 3,]); scaled.clus3
 
 - The states in cluster 3 include Arkansas, Connecticut, Delaware, Hawaii, Idaho, Indiana, Iowa, Kansas, Kentucky, Maine, Massachusetts, Minnesota, Missouri, Montana, Nebraska, New Hampshire, New Jersey, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, Rhode Island, South Dakota, Utah, Vermont, Virginia, Washington, West Virginia, Wisconsin, and Wyoming.
 
+
+### c). Does scaling the variables change the clustering results? Why? In your opinion, should the variables be scaled before the inter-observation dissimilarities are computed?
+
+```{r}
+skimr::skim_without_charts(arrests_df)
+```
+
+- Yes, scaling the variables does change the clustering results. In the scaled dataset, cluster 3 encompasses a greater number of states than cluster 3 in the non-scaled dataset. Additionally, the remaining two clusters also consist of different states after scaling the variables.
+
+
+- The reason is,  when the variables in a dataset have different scales, the distance metric used in clustering can be dominated by the variables with the largest scales. To avoid bias towards these variables, it can be beneficial to scale all variables to the same scale. This will allow each variable to contribute equally to the distance metric and help prevent the clustering algorithm from being biased towards variables with larger scales. This problem employs the Euclidean distance as the distance metric, but the variable urban_pop (percent of the population in each state living in urban areas) in the dataset has units that are incomparable to the other variables such as murder, and rape (number of arrests per 100,000 residents for each of the three crimes).
+
+
+- In general, whether scaling the variables or not depends on the specific problem and the nature of the data. As for this problem, in my opinion, the variables should be scaled before the inter-observation dissimilarities are computed. By doing so, we can avoid unfairly assigning more significance to the variables with larger magnitudes or incomparable units, such as urban_pop.
  
 
 
